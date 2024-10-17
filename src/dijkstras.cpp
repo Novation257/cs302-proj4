@@ -5,38 +5,62 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <queue>
 
 using namespace std;
 
+// Changes a cell's expression from coordinates to the ID format
+int toID(vector<int> cellCoords, int n) {
+  return (cellCoords[0]*n + cellCoords[1]);
+}
 
-// TODO: this code is an augmented form of BFS, which should be able to be modified into djikstras
-// Code copied from challenge 4 - Returns true if there is a valid path from src to dest
-bool isPath(unordered_map<char, vector<char>> &adjMap, const char &src, const char &dest) {
-  vector<char> visited;
-  queue<char> queue;
-  queue.push(src);
+// Changes a cell's expression from the ID format to coordinates
+vector<int> toCoords(int cellID, int n) {
+  return {cellID/n, cellID%n};
+}
 
-  while(queue.size() != 0) {
-    char curr = queue.front(); // Pop next node off queue
-    queue.pop();
+// COMPLETED?
+// Returns a 3d matrix with containing the optimal paths to every coord [X][Y][step]
+vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const int &srcID, const int &destID) {
+  vector<vector<int>> visited = board; // Holds -1 When cell has been visited
+  vector<vector<vector<int>>> paths;    // Each coord holds the cell IDs taken in the optimal path
+  vector<vector<int>> distances;        // Distances from src
+  multimap<int, int> frontier;          // {Distance from start, coordID}
 
-    visited.push_back(curr);      // Mark node as visited
-    if(curr == dest) return true; // Return true if dest if found
+  frontier.insert(0, srcID); // Insert starting coord into multimap
 
-    // Push curr's adjacent nodes to queue if they haven't been already visited
-    unordered_map<char, vector<char>>::iterator currPos = adjMap.find(curr);
-    for(unsigned i = 0; i < currPos->second.size(); i++) { // For every adjacent node...
-      bool isVisited = false;
-      for(unsigned j = 0; j < visited.size(); j++) { // Check against every node in visited vec
-        if(currPos->second[i] == visited[j]) isVisited = true; // Don't push if they are equal
+  while(!frontier.empty()) { // While frontier isn't empty...
+    // Get next coord from multimap
+    multimap<int,int>::iterator curr = frontier.begin();
+    int currDist = curr->first;
+    int currID   = curr->second;
+    frontier.erase(curr);
+
+    // Mark as visited
+    int currX = toCoords(currID, board.size())[0];
+    int currY = toCoords(currID, board.size())[1];
+    visited[currX][currY] = -1;
+
+    // Get curr's neighbors
+    vector<vector<int>> edgesCoords; // TODO: clamp these
+    edgesCoords.push_back({ currX+1, currY   });
+    edgesCoords.push_back({ currX-1, currY   });
+    edgesCoords.push_back({ currX  , currY+1 });
+    edgesCoords.push_back({ currX  , currY-1 });
+
+    // For each of curr's neighbors (up, down, left, right)...
+    for(unsigned i = 0; i < edgesCoords.size(); i++) {
+      int nextX = edgesCoords[i][0];
+      int nextY = edgesCoords[i][1];
+      if(visited[nextX][nextY] != -1) { // If the node hasn't been visited already...
+        distances[nextX][nextY] = distances[currX][currY] + board[currX][currY]; // Add distance of current tile to next's total
+        paths[nextX][nextY].push_back(currID); // Add current's ID to next's path
+        frontier.insert({distances[nextX][nextY], toID({nextX,nextY},board.size())}); // Insert next into multimap
       }
-      if(isVisited == false) queue.push(currPos->second[i]);
-    }  
+    }
   }
-
-  return false; // All possible nodes visited, dest is unreachable
+  return paths; 
 }
 
 
@@ -49,6 +73,13 @@ int main(int argc, char *argv[]) {
     // Board matrix itself
     // startRow startCol - coordinate where pathfinding will start
     // endRow endCol - coordinate where pathfinding will end
+    
+    int startRow, startCol;
+    int endRow  , endCol;
+
+    /* Convert board from char representation to the ints they represent */
+    vector<vector<int>> boardConverted;
+
 
     /* Perform dijkstras algorithm and get optimal path from the start coord to the end coord */
     /*
@@ -63,6 +94,9 @@ int main(int argc, char *argv[]) {
             Set n2's backedge to e.
             Insert n2 into the multimap, keyed on distance.
     */
+   int startID = toID({startRow, startCol}, boardConverted.size());
+   int endID   = toID({endRow  , endCol  }, boardConverted.size());
+   vector<vector<vector<int>>> optimalPaths = djikstrasAlgorithm(boardConverted, startID, endID);
 
 
     /* Output handling */
