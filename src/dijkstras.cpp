@@ -10,6 +10,11 @@
 
 using namespace std;
 
+// Returns the closest bound if val is out of bounds; otherwise returns val itself
+int clamp(int val, int maxVal) {
+  return min(max(val, 0), maxVal);
+}
+
 // Changes a cell's expression from coordinates to the ID format
 int toID(vector<int> cellCoords, int n) {
   return (cellCoords[0]*n + cellCoords[1]);
@@ -23,11 +28,12 @@ vector<int> toCoords(int cellID, int n) {
 // COMPLETED?
 // Returns a 3d matrix with containing the optimal paths to every coord [X][Y][step]
 vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const int &srcID, const int &destID) {
-  vector<vector<int>> visited = board; // Holds -1 When cell has been visited
+  vector<vector<int>> visited = board;  // Holds -1 When cell has been visited
   vector<vector<vector<int>>> paths;    // Each coord holds the cell IDs taken in the optimal path
   vector<vector<int>> distances;        // Distances from src
   multimap<int, int> frontier;          // {Distance from start, coordID}
 
+  int n = board.size();
   frontier.insert(0, srcID); // Insert starting coord into multimap
 
   while(!frontier.empty()) { // While frontier isn't empty...
@@ -38,16 +44,17 @@ vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const 
     frontier.erase(curr);
 
     // Mark as visited
-    int currX = toCoords(currID, board.size())[0];
-    int currY = toCoords(currID, board.size())[1];
+    int currX = toCoords(currID, n)[0];
+    int currY = toCoords(currID, n)[1];
     visited[currX][currY] = -1;
 
     // Get curr's neighbors
-    vector<vector<int>> edgesCoords; // TODO: clamp these
-    edgesCoords.push_back({ currX+1, currY   });
-    edgesCoords.push_back({ currX-1, currY   });
-    edgesCoords.push_back({ currX  , currY+1 });
-    edgesCoords.push_back({ currX  , currY-1 });
+    // If the neighbor is out of bounds (ie (-1, 3)) curr will be pushed, which is handled below
+    vector<vector<int>> edgesCoords;
+    edgesCoords.push_back({ clamp(currX+1, n),      currY       });
+    edgesCoords.push_back({ clamp(currX-1, n),      currY       });
+    edgesCoords.push_back({       currX  ,    clamp(currY+1, n) });
+    edgesCoords.push_back({       currX  ,    clamp(currY-1, n) });
 
     // For each of curr's neighbors (up, down, left, right)...
     for(unsigned i = 0; i < edgesCoords.size(); i++) {
