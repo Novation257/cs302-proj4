@@ -25,6 +25,11 @@ vector<int> toCoords(int cellID, int n) {
   return {cellID/n, cellID%n};
 }
 
+// Converts an int to a char (0=a, 1=b, etc.)
+char itoc(int num) {
+  return (num+65);
+}
+
 // COMPLETED?
 // Returns a 3d matrix with containing the optimal paths to every coord [X][Y][step]
 vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const int &srcID, const int &destID) {
@@ -34,7 +39,7 @@ vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const 
   multimap<int, int> frontier;          // {Distance from start, coordID}
 
   int n = board.size();
-  frontier.insert(0, srcID); // Insert starting coord into multimap
+  frontier.insert({0, srcID}); // Insert starting coord into multimap
 
   while(!frontier.empty()) { // While frontier isn't empty...
     // Get next coord from multimap
@@ -108,6 +113,27 @@ int main(int argc, char *argv[]) {
 
     /* Output handling */
     // Total cost
-    // Tiles travelled
+    int totalCost = 0;
+    for(unsigned i = 0; i < optimalPaths[startID][endID].size(); i++) {
+      totalCost += optimalPaths[startID][endID][i];
+    }
+    cout << totalCost << endl;
+
+    // Path travelled
+    for(unsigned i = 0; i < optimalPaths[startID][endID].size(); i++) {
+      int id = optimalPaths[startID][endID][i]; // get id
+      vector<int> coords = toCoords(id, boardConverted.size()); // convert id to int coords
+      cout << toupper(itoc(coords[0])) << toupper(itoc(coords[1])) << endl; // convert ints to chars and output to console
+    }
+
+    // // ASSUMES OUTPUT IS ADJLIST - useless right now but keeping in just in case
+    // // Total cost
+    // int totalCost = 0;
+    // for(unsigned i = 0; i < optimalPaths.size(); i++) {
+    //   for(unsigned j = i; j < optimalPaths[i].size(); j++) { // Splits 2d vec diagonally \ and only reads top-right half; avoids reading edges twice
+    //     if(optimalPaths[i][j] != 0) totalCost += optimalPaths[i][j]; // Add edge cost to total if [i][j] is a valid edge
+    //   }
+    // }
+
     return 0;
 }
