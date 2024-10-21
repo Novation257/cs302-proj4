@@ -7,6 +7,7 @@
 #include <string>
 #include <map>
 #include <queue>
+#include <climits>
 
 using namespace std;
 
@@ -42,7 +43,7 @@ vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const 
   distances.resize(board.size());
   paths.resize(board.size());
   for(unsigned i = 0; i < distances.size(); i++) {
-    distances[i].resize(board.size(), 0);
+    distances[i].resize(board.size(), INT_MAX);
     paths[i].resize(board.size());
   }
 
@@ -142,7 +143,7 @@ int main(int argc, char *argv[]) {
     for(unsigned i = 0; i < optimalPaths[startID][endID].size(); i++) {
       int id = optimalPaths[startID][endID][i]; // get id
       vector<int> coords = toCoords(id, boardConverted.size()); // convert id to int coords
-      cout << toupper(itoc(coords[0])) << toupper(itoc(coords[1])) << endl; // convert ints to chars and output to console
+      cout << (coords[0]) << " " << coords[1] << endl; // output to console
     }
     return 0;
 
