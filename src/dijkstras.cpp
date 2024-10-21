@@ -25,6 +25,11 @@ vector<int> toCoords(int cellID, int n) {
   return {cellID/n, cellID%n};
 }
 
+// Converts an int to a char (0=a, 1=b, etc.)
+char itoc(int num) {
+  return (num+65);
+}
+
 // COMPLETED?
 // Returns a 3d matrix with containing the optimal paths to every coord [X][Y][step]
 vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const int &srcID, const int &destID) {
@@ -34,12 +39,12 @@ vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const 
   multimap<int, int> frontier;          // {Distance from start, coordID}
 
   int n = board.size();
-  frontier.insert(0, srcID); // Insert starting coord into multimap
+  frontier.insert({0, srcID}); // Insert starting coord into multimap
 
   while(!frontier.empty()) { // While frontier isn't empty...
     // Get next coord from multimap
     multimap<int,int>::iterator curr = frontier.begin();
-    int currDist = curr->first;
+    // int currDist = curr->first;
     int currID   = curr->second;
     frontier.erase(curr);
 
@@ -72,6 +77,7 @@ vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const 
 
 
 int main(int argc, char *argv[]) {
+    /* Input handling */
     // nTiles - number of different tiles on board
     int nTiles;
     cin >> nTiles;
@@ -111,86 +117,105 @@ int main(int argc, char *argv[]) {
     int startID = toID({startRow, startCol}, boardConverted.size());
     int endID = toID({endRow, endCol}, boardConverted.size());
 
-    // Initialize distances and backedges for each node
-    vector<vector<int>> distances(mapX, vector<int>(mapY, -1));  // Distance initialized to -1
-    vector<vector<int>> backedges(mapX, vector<int>(mapY, -1));  // Backedges initialized to -1
-    distances[startRow][startCol] = 0;
+    /* Perform dijkstras algorithm and get optimal path from the start coord to the end coord */
+    vector<vector<vector<int>>> optimalPaths = djikstrasAlgorithm(boardConverted, startID, endID);
 
-    // Multimap to manage the frontier of nodes (distance from start, node ID)
-    multimap<int, int> frontier;
-    frontier.insert(pair<int, int>(0, startID));  // Insert starting node with distance 0
-
-    // While multimap isn't empty...
-    while (!frontier.empty()) {
-        // Remove a node n from the front of the multimap
-        multimap<int, int>::iterator curr = frontier.begin();
-        int currDist = curr->first;
-        int currID = curr->second;
-        frontier.erase(curr);
-
-        // Get current coordinates from node ID
-        vector<int> currCoords = toCoords(currID, boardConverted.size());
-        int currX = currCoords[0];
-        int currY = currCoords[1];
-
-        // Set visited field to true (i.e., mark with a -1 in distances)
-        distances[currX][currY] = -1;
-
-        // For each edge e from n to n2 (neighbors: up, down, left, right)
-        vector<vector<int>> edgesCoords(4, vector<int>(2));
-        edgesCoords[0] = vector<int>{clamp(currX + 1, 0, mapX - 1), currY};
-        edgesCoords[1] = vector<int>{clamp(currX - 1, 0, mapX - 1), currY};
-        edgesCoords[2] = vector<int>{currX, clamp(currY + 1, 0, mapY - 1)};
-        edgesCoords[3] = vector<int>{currX, clamp(currY - 1, 0, mapY - 1)};
-
-        for (int i = 0; i < 4; ++i) {
-            int nextX = edgesCoords[i][0];
-            int nextY = edgesCoords[i][1];
-            int nextID = toID({nextX, nextY}, boardConverted.size());
-
-            // Let d be n's distance plus the weight of edge e
-            int newDist = currDist + boardConverted[nextX][nextY];
-
-            //if n2's distance is -1, or if d is less than node n2's current distance
-            if (distances[nextX][nextY] == -1 || newDist < distances[nextX][nextY]) {
-                //if n2 in the multimap, remove it
-                multimap<int, int>::iterator it = frontier.find(distances[nextX][nextY]);
-                if (it != frontier.end()) {
-                    frontier.erase(it);
-                }
-
-                //sets n2's distance to d
-                distances[nextX][nextY] = newDist;
-
-                //sets n2's backedge to e
-                backedges[nextX][nextY] = currID;
-
-                //inserts n2 into the multimap, keyed on distance
-                frontier.insert(pair<int, int>(newDist, nextID));
-            }
-        }
-    }
-
-    //traces back the path using backedges and print cost
-    vector<int> path;
-    int currID = endID;
+    /* Output handling */
+    // Total cost
     int totalCost = 0;
-
-    //traces path back to the start using backedges
-    while (currID != -1) {
-        vector<int> coords = toCoords(currID, boardConverted.size());
-        path.push_back(currID);
-        currID = backedges[coords[0]][coords[1]];
+    for(unsigned i = 0; i < optimalPaths[startID][endID].size(); i++) {
+      totalCost += optimalPaths[startID][endID][i];
     }
-
-    reverse(path.begin(), path.end());
-    for (int i = 0; i < path.size(); ++i) {
-        vector<int> coords = toCoords(path[i], boardConverted.size());
-        cout << coords[0] << " " << coords[1] << endl;
-        totalCost += boardConverted[coords[0]][coords[1]];
-    }
-
     cout << totalCost << endl;
 
+    // Path travelled
+    for(unsigned i = 0; i < optimalPaths[startID][endID].size(); i++) {
+      int id = optimalPaths[startID][endID][i]; // get id
+      vector<int> coords = toCoords(id, boardConverted.size()); // convert id to int coords
+      cout << toupper(itoc(coords[0])) << toupper(itoc(coords[1])) << endl; // convert ints to chars and output to console
+    }
     return 0;
+
+
+
+    // // Initialize distances and backedges for each node
+    // vector<vector<int>> distances(mapX, vector<int>(mapY, -1));  // Distance initialized to -1
+    // vector<vector<int>> backedges(mapX, vector<int>(mapY, -1));  // Backedges initialized to -1
+    // distances[startRow][startCol] = 0;
+
+    // // Multimap to manage the frontier of nodes (distance from start, node ID)
+    // multimap<int, int> frontier;
+    // frontier.insert(pair<int, int>(0, startID));  // Insert starting node with distance 0
+
+    // // While multimap isn't empty...
+    // while (!frontier.empty()) {
+    //     // Remove a node n from the front of the multimap
+    //     multimap<int, int>::iterator curr = frontier.begin();
+    //     int currDist = curr->first;
+    //     int currID = curr->second;
+    //     frontier.erase(curr);
+
+    //     // Get current coordinates from node ID
+    //     vector<int> currCoords = toCoords(currID, boardConverted.size());
+    //     int currX = currCoords[0];
+    //     int currY = currCoords[1];
+
+    //     // Set visited field to true (i.e., mark with a -1 in distances)
+    //     distances[currX][currY] = -1;
+
+    //     // For each edge e from n to n2 (neighbors: up, down, left, right)
+    //     vector<vector<int>> edgesCoords(4, vector<int>(2));
+    //     edgesCoords[0] = vector<int>{clamp(currX + 1, 0, mapX - 1), currY};
+    //     edgesCoords[1] = vector<int>{clamp(currX - 1, 0, mapX - 1), currY};
+    //     edgesCoords[2] = vector<int>{currX, clamp(currY + 1, 0, mapY - 1)};
+    //     edgesCoords[3] = vector<int>{currX, clamp(currY - 1, 0, mapY - 1)};
+
+    //     for (int i = 0; i < 4; ++i) {
+    //         int nextX = edgesCoords[i][0];
+    //         int nextY = edgesCoords[i][1];
+    //         int nextID = toID({nextX, nextY}, boardConverted.size());
+
+    //         // Let d be n's distance plus the weight of edge e
+    //         int newDist = currDist + boardConverted[nextX][nextY];
+
+    //         //if n2's distance is -1, or if d is less than node n2's current distance
+    //         if (distances[nextX][nextY] == -1 || newDist < distances[nextX][nextY]) {
+    //             //if n2 in the multimap, remove it
+    //             multimap<int, int>::iterator it = frontier.find(distances[nextX][nextY]);
+    //             if (it != frontier.end()) {
+    //                 frontier.erase(it);
+    //             }
+
+    //             //sets n2's distance to d
+    //             distances[nextX][nextY] = newDist;
+
+    //             //sets n2's backedge to e
+    //             backedges[nextX][nextY] = currID;
+
+    //             //inserts n2 into the multimap, keyed on distance
+    //             frontier.insert(pair<int, int>(newDist, nextID));
+    //         }
+    //     }
+    // }
+
+    // //traces back the path using backedges and print cost
+    // vector<int> path;
+    // int currID = endID;
+    // int totalCost = 0;
+
+    // //traces path back to the start using backedges
+    // while (currID != -1) {
+    //     vector<int> coords = toCoords(currID, boardConverted.size());
+    //     path.push_back(currID);
+    //     currID = backedges[coords[0]][coords[1]];
+    // }
+
+    // reverse(path.begin(), path.end());
+    // for (int i = 0; i < path.size(); ++i) {
+    //     vector<int> coords = toCoords(path[i], boardConverted.size());
+    //     cout << coords[0] << " " << coords[1] << endl;
+    //     totalCost += boardConverted[coords[0]][coords[1]];
+    // }
+
+    // cout << totalCost << endl;
 }
