@@ -38,6 +38,14 @@ vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const 
   vector<vector<int>> distances;        // Distances from src
   multimap<int, int> frontier;          // {Distance from start, coordID}
 
+  // Initialize 2D vectors (paths and distances)
+  distances.resize(board.size());
+  paths.resize(board.size());
+  for(unsigned i = 0; i < distances.size(); i++) {
+    distances[i].resize(board.size(), 0);
+    paths[i].resize(board.size());
+  }
+
   int n = board.size();
   frontier.insert({0, srcID}); // Insert starting coord into multimap
 
@@ -53,13 +61,15 @@ vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const 
     int currY = toCoords(currID, n)[1];
     visited[currX][currY] = -1;
 
+    // cout << currX << " " << currY << endl;
+
     // Get curr's neighbors
     // If the neighbor is out of bounds (ie (-1, 3)) curr will be pushed, which is handled below
     vector<vector<int>> edgesCoords;
-    edgesCoords.push_back({ clamp(currX+1, n),      currY       });
-    edgesCoords.push_back({ clamp(currX-1, n),      currY       });
-    edgesCoords.push_back({       currX  ,    clamp(currY+1, n) });
-    edgesCoords.push_back({       currX  ,    clamp(currY-1, n) });
+    edgesCoords.push_back({ clamp(currX+1, n-1),      currY       });
+    edgesCoords.push_back({ clamp(currX-1, n-1),      currY       });
+    edgesCoords.push_back({       currX  ,      clamp(currY+1, n-1) });
+    edgesCoords.push_back({       currX  ,      clamp(currY-1, n-1) });
 
     // For each of curr's neighbors (up, down, left, right)...
     for(unsigned i = 0; i < edgesCoords.size(); i++) {
