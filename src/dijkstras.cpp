@@ -33,7 +33,7 @@ char itoc(int num) {
 
 // COMPLETED?
 // Returns a 3d matrix with containing the optimal paths to every coord [X][Y][step]
-vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const int &srcID, const int &destID) {
+vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const int &srcID) {
   vector<vector<int>> visited = board;  // Holds -1 When cell has been visited
   vector<vector<vector<int>>> paths;    // Each coord holds the cell IDs taken in the optimal path
   vector<vector<int>> distances;        // Distances from src
@@ -43,7 +43,8 @@ vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const 
   distances.resize(board.size());
   paths.resize(board.size());
   for(unsigned i = 0; i < distances.size(); i++) {
-    distances[i].resize(board.size(), INT_MAX);
+    distances[i].resize(board.size(), 999999);
+    distances[0][0] = 0;
     paths[i].resize(board.size());
   }
 
@@ -60,9 +61,9 @@ vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const 
     // Mark as visited
     int currX = toCoords(currID, n)[0];
     int currY = toCoords(currID, n)[1];
+    vector<int> currPath = paths[currX][currY];
     visited[currX][currY] = -1;
 
-    // cout << currX << " " << currY << endl;
 
     // Get curr's neighbors
     // If the neighbor is out of bounds (ie (-1, 3)) curr will be pushed, which is handled below
@@ -76,14 +77,31 @@ vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const 
     for(unsigned i = 0; i < edgesCoords.size(); i++) {
       int nextX = edgesCoords[i][0];
       int nextY = edgesCoords[i][1];
+      if(currX == nextX && currY == nextY) break;
       if(visited[nextX][nextY] != -1) { // If the node hasn't been visited already...
-        distances[nextX][nextY] = distances[currX][currY] + board[currX][currY]; // Add distance of current tile to next's total
-        paths[nextX][nextY].push_back(currID); // Add current's ID to next's path
+        if(distances[currX][currY] + board[currX][currY] < distances[nextX][nextY]) { // If current path is "cheaper"...
+
+          // DEBUG - printing changes to path
+          cout << "At " << nextX << " " << nextY << " from " << currX << " " << currY << "... ";
+          cout << "weight " << distances[currX][currY] + board[currX][currY] << " is less than " << distances[nextX][nextY] << endl;
+          // Update distance (current distance from start + current node's weight)
+          distances[nextX][nextY] = distances[currX][currY] + board[currX][currY];
+
+          // Update path (current path + current node)
+          paths[nextX][nextY] = currPath;
+          paths[nextX][nextY].push_back(currID);
+
+          // DEBUG - printing changes to path
+          for(unsigned i = 0; i < paths[nextX][nextY].size(); i++) {
+            vector<int> coords = toCoords(paths[nextX][nextY][i], n);
+            cout << "  " << coords[0] << " " << coords[1] << endl;
+          }
+        }
         frontier.insert({distances[nextX][nextY], toID({nextX,nextY},board.size())}); // Insert next into multimap
       }
     }
   }
-  return paths; 
+  return paths;
 }
 
 
@@ -129,7 +147,7 @@ int main(int argc, char *argv[]) {
     int endID = toID({endRow, endCol}, boardConverted.size());
 
     /* Perform dijkstras algorithm and get optimal path from the start coord to the end coord */
-    vector<vector<vector<int>>> optimalPaths = djikstrasAlgorithm(boardConverted, startID, endID);
+    vector<vector<vector<int>>> optimalPaths = djikstrasAlgorithm(boardConverted, startID);
 
     /* Output handling */
     // Total cost
