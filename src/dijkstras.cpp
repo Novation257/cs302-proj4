@@ -34,21 +34,25 @@ char itoc(int num) {
 // COMPLETED?
 // Returns a 3d matrix with containing the optimal paths to every coord [X][Y][step]
 vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const int &srcID, const int &destID) {
-  vector<vector<int>> visited = board;  // Holds -1 When cell has been visited
-  vector<vector<vector<int>>> paths;    // Each coord holds the cell IDs taken in the optimal path
-  vector<vector<int>> distances;        // Distances from src
-  multimap<int, int> frontier;          // {Distance from start, coordID}
-
-  // Initialize 2D vectors (paths and distances)
-  distances.resize(board.size());
-  paths.resize(board.size());
-  for(unsigned i = 0; i < distances.size(); i++) {
-    distances[i].resize(board.size(), 999999);
-    distances[0][0] = 0;
-    paths[i].resize(board.size());
-  }
+  vector<vector<bool>> visited;       // Holds true when coord has been visited
+  vector<vector<vector<int>>> paths;  // Each coord holds the cell IDs taken in the optimal path
+  vector<vector<int>> distances;      // Distances from src
+  multimap<int, int> frontier;        // {Distance from start, coordID}
 
   int n = board.size();
+
+  // Initialize 2D vectors (paths and distances)
+  distances.resize(n);
+  paths.resize(n);
+  visited.resize(n);
+  for(int i = 0; i < n; i++) {
+    distances[i].resize(n, 999999);
+    paths[i].resize(n);
+    visited[i].resize(n);
+  }
+  
+  vector<int> startCoords = toCoords(srcID, n);
+  distances[startCoords[0]][startCoords[1]] = 0;
   frontier.insert({0, srcID}); // Insert starting coord into multimap
 
   while(!frontier.empty()) { // While frontier isn't empty...
@@ -62,56 +66,41 @@ vector<vector<vector<int>>> djikstrasAlgorithm(vector<vector<int>> board, const 
     int currX = toCoords(currID, n)[0];
     int currY = toCoords(currID, n)[1];
     vector<int> currPath = paths[currX][currY];
-    visited[currX][currY] = -1;
 
+    if(visited[currX][currY] == false) {
+      // Get curr's neighbors
+      vector<vector<int>> edgesCoords;
+      if(currX+1 < n  && visited[currX+1][currY] == false) edgesCoords.push_back({ currX+1,      currY   }); // Down
+      if(currX-1 >= 0 && visited[currX-1][currY] == false) edgesCoords.push_back({ currX-1,      currY   }); // Up
+      if(currY+1 < n  && visited[currX][currY+1] == false) edgesCoords.push_back({ currX  ,      currY+1 }); // Right
+      if(currY-1 >= 0 && visited[currX][currY-1] == false) edgesCoords.push_back({ currX  ,      currY-1 }); // Left
 
-    // Get curr's neighbors
-    // If the neighbor is out of bounds (ie (-1, 3)) curr will be pushed, which is handled below
-    vector<vector<int>> edgesCoords;
-    edgesCoords.push_back({ clamp(currX+1, n-1),      currY       });
-    edgesCoords.push_back({ clamp(currX-1, n-1),      currY       });
-    edgesCoords.push_back({       currX  ,      clamp(currY+1, n-1) });
-    edgesCoords.push_back({       currX  ,      clamp(currY-1, n-1) });
+      // cout << "Node " << currX << " " << currY << endl; // DEBUG - print curr
 
-    // For each of curr's neighbors (up, down, left, right)...
-    for(unsigned i = 0; i < edgesCoords.size(); i++) {
-      int nextX = edgesCoords[i][0];
-      int nextY = edgesCoords[i][1];
-      if(currX == nextX && currY == nextY) break;
-      if(visited[nextX][nextY] != -1) { // If the node hasn't been visited already...
-        if(distances[currX][currY] + board[currX][currY] < distances[nextX][nextY]) { // If current path is "cheaper"...
+      // For each of curr's neighbors (up, down, left, right)...
+      for(unsigned i = 0; i < edgesCoords.size(); i++) {
+        int nextX = edgesCoords[i][0];
+        int nextY = edgesCoords[i][1];
+        if(visited[nextX][nextY] == false) { // If the node hasn't been visited already...
+          if(distances[currX][currY] + board[currX][currY] < distances[nextX][nextY]) { // If current path is "cheaper"...
 
-          // // DEBUG - printing changes to path
-          // cout << "At " << nextX << " " << nextY << " from " << currX << " " << currY << "... ";
-          // cout << "weight " << distances[currX][currY] + board[currX][currY] << " is less than " << distances[nextX][nextY] << endl;
+            // // DEBUG - printing changes to path
+            // cout << "At " << nextX << " " << nextY << " from " << currX << " " << currY << "... ";
+            // cout << "weight " << distances[currX][currY] + board[currX][currY] << " is less than " << distances[nextX][nextY] << endl;
 
-          // Update distance (current distance from start + current node's weight)
-          distances[nextX][nextY] = distances[currX][currY] + board[currX][currY];
+            // Update distance (current distance from start + current node's weight)
+            distances[nextX][nextY] = distances[currX][currY] + board[currX][currY];
 
-          // Update path (current path + current node)
-          paths[nextX][nextY] = currPath;
-          paths[nextX][nextY].push_back(currID);
-
-          // // DEBUG - printing changes to path
-          // for(unsigned i = 0; i < paths[nextX][nextY].size(); i++) {
-          //   vector<int> coords = toCoords(paths[nextX][nextY][i], n);
-          //   cout << "  " << coords[0] << " " << coords[1] << endl;
-          // }
+            // Update path (current path + current node)
+            paths[nextX][nextY] = currPath;
+            paths[nextX][nextY].push_back(currID);
+          }
+          frontier.insert({distances[nextX][nextY], toID({nextX,nextY},board.size())}); // Insert next into multimap
         }
-        frontier.insert({distances[nextX][nextY], toID({nextX,nextY},board.size())}); // Insert next into multimap
       }
     }
+    visited[currX][currY] = true;
   }
-
-  // // DEBUG - printing changes to path
-  // cout << endl;
-  // cout << toCoords(destID, n)[0] << " " << toCoords(destID, n)[1] << endl;
-  // cout << endl;
-  // for(unsigned i = 0; i < paths[srcID][destID].size(); i++) {
-  //   vector<int> coords = toCoords(paths[srcID][destID][i], n);
-  //   cout << "  " << coords[0] << " " << coords[1] << endl;
-  // }
-
   return paths;
 }
 
@@ -162,12 +151,11 @@ int main(int argc, char *argv[]) {
 
   /* Output handling */
   // Total cost
-
-
   int totalCost = 0;
   for(unsigned i = 0; i < optimalPaths[endCol][endRow].size(); i++) {
-    // cout << optimalPaths[endCol][endRow][i] << end;;
-    totalCost += optimalPaths[endCol][endRow][i];
+    vector<int> coords = toCoords(optimalPaths[endCol][endRow][i], mapX);
+
+    totalCost += boardConverted[coords[0]][coords[1]];
   }
   cout << totalCost << endl;
 
@@ -176,88 +164,6 @@ int main(int argc, char *argv[]) {
     vector<int> coords = toCoords(optimalPaths[endCol][endRow][i], mapX);
     cout << coords[0] << " " << coords[1] << endl;
   }
+  cout << endRow << " " << endCol << endl;
   return 0;
-
-
-
-  // // Initialize distances and backedges for each node
-  // vector<vector<int>> distances(mapX, vector<int>(mapY, -1));  // Distance initialized to -1
-  // vector<vector<int>> backedges(mapX, vector<int>(mapY, -1));  // Backedges initialized to -1
-  // distances[startRow][startCol] = 0;
-
-  // // Multimap to manage the frontier of nodes (distance from start, node ID)
-  // multimap<int, int> frontier;
-  // frontier.insert(pair<int, int>(0, startID));  // Insert starting node with distance 0
-
-  // // While multimap isn't empty...
-  // while (!frontier.empty()) {
-  //     // Remove a node n from the front of the multimap
-  //     multimap<int, int>::iterator curr = frontier.begin();
-  //     int currDist = curr->first;
-  //     int currID = curr->second;
-  //     frontier.erase(curr);
-
-  //     // Get current coordinates from node ID
-  //     vector<int> currCoords = toCoords(currID, boardConverted.size());
-  //     int currX = currCoords[0];
-  //     int currY = currCoords[1];
-
-  //     // Set visited field to true (i.e., mark with a -1 in distances)
-  //     distances[currX][currY] = -1;
-
-  //     // For each edge e from n to n2 (neighbors: up, down, left, right)
-  //     vector<vector<int>> edgesCoords(4, vector<int>(2));
-  //     edgesCoords[0] = vector<int>{clamp(currX + 1, 0, mapX - 1), currY};
-  //     edgesCoords[1] = vector<int>{clamp(currX - 1, 0, mapX - 1), currY};
-  //     edgesCoords[2] = vector<int>{currX, clamp(currY + 1, 0, mapY - 1)};
-  //     edgesCoords[3] = vector<int>{currX, clamp(currY - 1, 0, mapY - 1)};
-
-  //     for (int i = 0; i < 4; ++i) {
-  //         int nextX = edgesCoords[i][0];
-  //         int nextY = edgesCoords[i][1];
-  //         int nextID = toID({nextX, nextY}, boardConverted.size());
-
-  //         // Let d be n's distance plus the weight of edge e
-  //         int newDist = currDist + boardConverted[nextX][nextY];
-
-  //         //if n2's distance is -1, or if d is less than node n2's current distance
-  //         if (distances[nextX][nextY] == -1 || newDist < distances[nextX][nextY]) {
-  //             //if n2 in the multimap, remove it
-  //             multimap<int, int>::iterator it = frontier.find(distances[nextX][nextY]);
-  //             if (it != frontier.end()) {
-  //                 frontier.erase(it);
-  //             }
-
-  //             //sets n2's distance to d
-  //             distances[nextX][nextY] = newDist;
-
-  //             //sets n2's backedge to e
-  //             backedges[nextX][nextY] = currID;
-
-  //             //inserts n2 into the multimap, keyed on distance
-  //             frontier.insert(pair<int, int>(newDist, nextID));
-  //         }
-  //     }
-  // }
-
-  // //traces back the path using backedges and print cost
-  // vector<int> path;
-  // int currID = endID;
-  // int totalCost = 0;
-
-  // //traces path back to the start using backedges
-  // while (currID != -1) {
-  //     vector<int> coords = toCoords(currID, boardConverted.size());
-  //     path.push_back(currID);
-  //     currID = backedges[coords[0]][coords[1]];
-  // }
-
-  // reverse(path.begin(), path.end());
-  // for (int i = 0; i < path.size(); ++i) {
-  //     vector<int> coords = toCoords(path[i], boardConverted.size());
-  //     cout << coords[0] << " " << coords[1] << endl;
-  //     totalCost += boardConverted[coords[0]][coords[1]];
-  // }
-
-  // cout << totalCost << endl;
 }
