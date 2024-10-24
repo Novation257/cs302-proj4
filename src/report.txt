@@ -1,0 +1,15 @@
+Project 4
+Fall 2024 COSC302
+10.23.2024
+Nic Dawson and Julianna Prater
+
+    1. How did you represent the map as a graph? Explain which graph representation you used and how you determined the relationship between vertices include the edges and their weights.
+    We represented the map as a weighted graph using an adjacency matrix, implemented as a 2D vector of vectors. Each element in the matrix corresponds to a tile on the board, and its value represents the cost of traversing that tile. The adjacency matrix is most suited for this problem because it allows for easy access to weights associated with each tile, making it more straightforward to track the cost of moving between vertices than an adjacency list. The relationships between vertices/tiles are established by treating neighboring tiles as connected, with the edge weight being the tile's traversal cost.
+
+    2. What is complexity of your implementation of Dijkstra's Algorithm? Explain this by describing which data structures you used and how you used them to implement path finding.
+	   The overall time complexity of our Dijkstra's Algorithm implementation is O(n^2(log n)), where (n) is the number of nodes in the graph which corresponds to the number of tiles in the grid. We use a priority queue (implemented as a multimap) to efficiently retrieve the next node with the smallest distance, which takes per insertion or extraction. For each node, we iterate over its neighbors to check and update distances, requiring O(1) operations per neighbor. The overall process requires iterating through all nodes, leading to the complexity O(n^2), where (n) is the number of tiles in the map.
+
+    3. How well does your implementation scale? Explain what effect did N (ie. the size of the map) have on the performance of your dijkstras path finding component in terms of execution time and memory usage?
+	As the map size N increases, both the execution time and memory usage scale. Execution time grows in roughly O(n^2 (log n)), where n is the number of tiles, due to the increased number of nodes and edges that need to be processed. Memory usage also increases linearly with N because we need to store the distances, paths, and visited status for every tile on the board. the use of a priority queue (multimap) helps manage this growth efficiently by reducing the time spent selecting the next node to process, but, larger maps still lead to longer execution times and higher memory consumption.
+
+Nic wrote Dijkstra's algorithm, the output handling, and Generate_map. I wrote the input handling and lab writeup and found the time and space complexities.
